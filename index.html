@@ -1,0 +1,224 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>HOLE Admin & Mint</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; background:#0f1220; color:#e8eaf6; }
+    .card { background:#171b2e; padding:16px; border-radius:14px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    label { font-size:14px; opacity:.9; }
+    input { background:#0f1220; border:1px solid #27305b; color:#e8eaf6; padding:8px 10px; border-radius:10px; }
+    button { background:#5865f2; color:white; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; }
+    button.ghost { background:transparent; border:1px solid #5865f2; }
+    h2 { margin:.2rem 0 .6rem; }
+    .muted { opacity:.8; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:16px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .ok { color:#7CFC98; } .err { color:#ff8080; }
+  </style>
+</head>
+<body>
+  <h1>HOLE — Control & Mint</h1>
+  <div class="card">
+    <div class="row">
+      <button id="connect">Connect MetaMask</button>
+      <div id="who" class="mono muted"></div>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <label>Contract</label>
+      <input id="addr" size="50" />
+      <button id="load" class="ghost">Load</button>
+    </div>
+    <div id="net" class="muted" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Stats</h2>
+      <div class="mono" id="stats">—</div>
+      <div class="row" style="margin-top:10px;">
+        <button id="refresh" class="ghost">Refresh</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Transferability</h2>
+      <div>transfersEnabled: <span class="mono" id="te">?</span></div>
+      <div class="row" style="margin-top:10px;">
+        <button id="lock">Lock (false)</button>
+        <button id="unlock" class="ghost">Unlock (true)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mint Controls</h2>
+      <div>mintOpen: <span class="mono" id="mo">?</span></div>
+      <div class="row" style="margin-top:8px;">
+        <button id="pause">Pause</button>
+        <button id="unpause" class="ghost">Unpause</button>
+      </div>
+      <div style="margin-top:10px;">pricePerTokenWei: <span class="mono" id="ppw">?</span></div>
+      <div class="row" style="margin-top:8px;">
+        <label>New price (wei)</label>
+        <input id="newPrice" placeholder="e.g. 1000000000000000" />
+        <button id="setPrice">Set Price</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mint</h2>
+      <div class="row">
+        <label>Amount (whole HOLE)</label>
+        <input id="amt" type="number" min="1" value="5" />
+        <button id="mint">Mint</button>
+      </div>
+      <div class="muted mono" id="mintNote" style="margin-top:8px;">—</div>
+    </div>
+
+    <div class="card">
+      <h2>Balances</h2>
+      <div class="row">
+        <label>Address</label>
+        <input id="balAddr" size="42" placeholder="0x..." />
+        <button id="readBal">Read balanceOf</button>
+      </div>
+      <div class="mono" id="balOut">—</div>
+    </div>
+
+    <div class="card">
+      <h2>Treasury</h2>
+      <div class="row">
+        <label>Withdraw to</label>
+        <input id="to" size="42" placeholder="0xTreasury..." />
+        <button id="withdraw">Withdraw</button>
+      </div>
+      <div class="muted">Owner only</div>
+    </div>
+  </div>
+
+  <div id="log" class="mono" style="margin-top:16px;"></div>
+
+  <script type="module">
+    import { CONTRACT_ADDRESS } from './config.js';
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script type="module">
+    import abi from './abi.json' assert { type: 'json' };
+    import { CONTRACT_ADDRESS } from './config.js';
+
+    let provider, signer, contract, decimals = 18;
+
+    const $ = id => document.getElementById(id);
+    const log = (m, cls='') => { const n=document.createElement('div'); n.textContent=m; if(cls) n.className=cls; $('log').prepend(n); };
+
+    async function connect() {
+      if (!window.ethereum) { alert('Install MetaMask'); return; }
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send('eth_requestAccounts', []);
+      signer = provider.getSigner();
+      $('who').textContent = 'Connected: ' + await signer.getAddress();
+      const n = await provider.getNetwork();
+      $('net').textContent = `ChainId: ${n.chainId}`;
+    }
+
+    function load(address) {
+      contract = new ethers.Contract(address, abi, signer || provider);
+      $('addr').value = address;
+    }
+
+    async function refresh() {
+      if (!contract) return;
+      const [nm, sym, dec, ts, own, ppw, left, mo, te] = await Promise.all([
+        contract.name(), contract.symbol(), contract.decimals(),
+        contract.totalSupply(), contract.owner(),
+        contract.pricePerTokenWei(), contract.tokensLeft(),
+        contract.mintOpen(), contract.transfersEnabled()
+      ]);
+      decimals = dec;
+      $('ppw').textContent = ppw.toString();
+      $('mo').textContent = mo;
+      $('te').textContent = te;
+      $('stats').innerHTML =
+        `name: ${nm}\n`+
+        `symbol: ${sym}\n`+
+        `decimals: ${dec}\n`+
+        `totalSupply: ${ethers.utils.formatUnits(ts, dec)} ${sym}\n`+
+        `tokensLeft: ${left.toString()} (whole)\n`+
+        `owner: ${own}`;
+      $('mintNote').textContent = `Mint cost = amount * pricePerTokenWei (auto-sent).`;
+    }
+
+    async function setTransfers(enabled) {
+      const tx = await contract.setTransfersEnabled(enabled);
+      log(`setTransfersEnabled(${enabled}) tx: ${tx.hash}`);
+      await tx.wait(); log('✓ transfers enabled = '+enabled, 'ok'); await refresh();
+    }
+
+    async function setMint(open) {
+      const tx = await contract.setMintOpen(open);
+      log(`setMintOpen(${open}) tx: ${tx.hash}`);
+      await tx.wait(); log('✓ mintOpen = '+open, 'ok'); await refresh();
+    }
+
+    async function setPrice() {
+      const v = $('newPrice').value.trim();
+      if (!v) return alert('enter new price in wei');
+      const wei = ethers.BigNumber.from(v);
+      const tx = await contract.setPrice(wei);
+      log(`setPrice(${wei.toString()}) tx: ${tx.hash}`);
+      await tx.wait(); log('✓ price updated', 'ok'); await refresh();
+    }
+
+    async function doMint() {
+      const amount = ethers.BigNumber.from(String($('amt').value || '0'));
+      if (amount.lte(0)) return alert('amount > 0');
+      const price = await contract.pricePerTokenWei();
+      const value = price.mul(amount);
+      const tx = await contract.mint(amount, { value });
+      log(`mint(${amount.toString()}) value=${value.toString()} tx: ${tx.hash}`);
+      await tx.wait(); log('✓ minted', 'ok'); await refresh();
+    }
+
+    async function readBal() {
+      const a = $('balAddr').value.trim();
+      if (!a) return alert('enter address');
+      const bal = await contract.balanceOf(a);
+      $('balOut').textContent = ethers.utils.formatUnits(bal, decimals) + ' HOLE';
+    }
+
+    async function withdraw() {
+      const to = $('to').value.trim();
+      if (!to) return alert('enter destination address');
+      const tx = await contract.withdraw(to);
+      log('withdraw tx: '+tx.hash);
+      await tx.wait(); log('✓ withdraw done', 'ok');
+    }
+
+    // wire up
+    $('connect').onclick = connect;
+    $('load').onclick = async () => { load($('addr').value.trim()); await refresh(); };
+    $('refresh').onclick = refresh;
+
+    $('lock').onclick = () => setTransfers(false);
+    $('unlock').onclick = () => setTransfers(true);
+
+    $('pause').onclick = () => setMint(false);
+    $('unpause').onclick = () => setMint(true);
+
+    $('setPrice').onclick = setPrice;
+    $('mint').onclick = doMint;
+    $('readBal').onclick = readBal;
+    $('withdraw').onclick = withdraw;
+
+    // boot
+    $('addr').value = CONTRACT_ADDRESS;
+    window.addEventListener('load', async () => {
+      try { await connect(); } catch {}
+      load(CONTRACT_ADDRESS);
+      try { await refresh(); } catch (e) { log('Load/refresh failed (connect first)'); }
+    });
+  </script>
+</body>
+</html>
