@@ -2,11 +2,11 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>KAZAR+SOMNIA</title>
+  <title>HOLE — Control & Mint</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
 
-  <!-- ✨ Google Fonts (your picks) -->
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Bungee&display=swap" rel="stylesheet">
 
   <!-- Ethers v5 UMD -->
@@ -14,95 +14,104 @@
 
   <style>
     :root{
-      /* tweak these for palette */
-      --bg:#0a0b12;
-      --grid:#1a1f33;
-      --card:#0f1220;
-      --edge:#2ad4ff;       /* neon blue */
-      --edge2:#8a5bff;      /* neon purple */
-      --primary:#00ffa6;    /* action green */
-      --text:#e9ecff;
-      --muted:#9aa3c7;
-      --border:#2b3156;
+      --bg:#07080f;
+      --grid:#121629;
+      --card:#0c0f1c;
+      --border:#263061;
+      --text:#f0f3ff;
+      --muted:#9ea7cd;
+      --neon:#33ddff;         /* cyan edge */
+      --neon2:#8f5bff;        /* purple edge */
+      --accent:#00ffa6;       /* action green */
       --ok:#77ffb0; --err:#ff7e7e;
       --radius:16px;
+      --shadow:0 12px 30px rgba(0,0,0,.55);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:24px;
-      color:var(--text);
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      margin:24px; color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      /* static grid under the animated starfield */
       background:
-        /* soft radial glows */
-        radial-gradient(800px 800px at 15% 25%, rgba(42,212,255,.07), transparent 60%),
-        radial-gradient(600px 600px at 85% 70%, rgba(138,91,255,.08), transparent 60%),
-        /* grid */
         linear-gradient(var(--bg),var(--bg)),
         repeating-linear-gradient(0deg, transparent 0 39px, var(--grid) 40px),
         repeating-linear-gradient(90deg, transparent 0 39px, var(--grid) 40px);
-      background-blend-mode: screen, screen, normal, normal, normal;
+      overflow-x:hidden;
     }
 
-    /* Headings with your fonts */
-    h1{
-      font-family: 'Rubik Mono One', system-ui, sans-serif;
-      letter-spacing:1px; line-height:1.1; margin:0 0 18px;
-      text-shadow:0 0 22px rgba(42,212,255,.35), 0 0 6px rgba(138,91,255,.25);
+    /* full-screen star canvas behind everything */
+    #space{
+      position:fixed; inset:0; z-index:-1; pointer-events:none; display:block;
+      background: radial-gradient(800px 800px at 15% 25%, rgba(51,221,255,.07), transparent 60%),
+                  radial-gradient(600px 600px at 85% 70%, rgba(143,91,255,.07), transparent 60%);
+      filter: saturate(1.05) brightness(1.02);
     }
+
+    /* Title with subtle scanline shimmer */
+    h1{
+      font-family:'Rubik Mono One', system-ui, sans-serif;
+      letter-spacing:1px; line-height:1.1; margin:0 0 18px;
+      text-shadow:0 0 24px rgba(51,221,255,.35), 0 0 6px rgba(143,91,255,.25);
+      position:relative; display:inline-block;
+    }
+    h1::after{
+      content:""; position:absolute; left:0; right:0; height:2px; bottom:-6px;
+      background:linear-gradient(90deg, transparent, rgba(51,221,255,.6), transparent);
+      filter:blur(.3px);
+    }
+
     h2{
       font-family:'Bungee', system-ui, sans-serif;
-      letter-spacing:.3px; margin:.2rem 0 .8rem; color:var(--text);
-      text-shadow:0 0 10px rgba(42,212,255,.15);
+      letter-spacing:.25px; margin:.25rem 0 .8rem;
+      text-shadow:0 0 10px rgba(51,221,255,.12);
     }
 
     .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.0)) , var(--card);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.0)),
+        var(--card);
       border:1px solid var(--border);
       border-radius:var(--radius);
       padding:16px;
-      position:relative;
-      overflow:hidden;
-      box-shadow:
-        0 0 0 1px rgba(42,212,255,.06),
-        0 12px 30px rgba(0,0,0,.45);
-      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      position:relative; overflow:hidden;
+      box-shadow:var(--shadow);
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease;
+      backdrop-filter:saturate(1.05) blur(1px);
     }
     .card::before{
-      /* neon edge sweep */
-      content:"";
-      position:absolute; inset:-2px;
-      border-radius:calc(var(--radius) + 2px);
-      background:conic-gradient(from 180deg at 50% 50%, rgba(42,212,255,.35), rgba(138,91,255,.35), transparent 25%);
-      filter:blur(18px); opacity:.25; pointer-events:none;
-      mask:linear-gradient(#000 0 0);
+      /* holo ring */
+      content:""; position:absolute; inset:-2px; border-radius:calc(var(--radius) + 2px);
+      background:conic-gradient(from 180deg at 50% 50%, rgba(51,221,255,.35), rgba(143,91,255,.35), transparent 25%);
+      filter:blur(18px); opacity:.24; pointer-events:none;
     }
     .card:hover{
       transform:translateY(-2px);
-      border-color:rgba(42,212,255,.35);
-      box-shadow:0 0 0 1px rgba(42,212,255,.25), 0 22px 45px rgba(0,0,0,.6);
+      border-color:rgba(51,221,255,.35);
+      box-shadow:0 0 0 1px rgba(51,221,255,.25), 0 22px 45px rgba(0,0,0,.65);
+      filter:saturate(1.06);
     }
 
     .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
     label{font-size:13px; color:var(--muted)}
-    input{
+    input, textarea{
       background:#0a0d1d; border:1px solid var(--border); color:var(--text);
-      padding:10px 12px; border-radius:12px; outline:none; min-width:180px;
+      padding:10px 12px; border-radius:12px; outline:none; min-width:180px
     }
-    input:focus{border-color:var(--edge); box-shadow:0 0 0 3px rgba(42,212,255,.15)}
+    textarea{width:100%; min-height:120px; font-family: ui-monospace, Menlo, Consolas, monospace}
+    input:focus, textarea:focus{border-color:var(--neon); box-shadow:0 0 0 3px rgba(51,221,255,.15)}
+
     button{
-      font-family:'Bungee',system-ui,sans-serif;
-      letter-spacing:.2px;
-      background:linear-gradient(90deg, var(--primary), #74ffea);
+      font-family:'Bungee',system-ui,sans-serif; letter-spacing:.2px;
+      background:linear-gradient(90deg, var(--accent), #75ffe8);
       color:#001b12; border:none; padding:10px 14px; border-radius:12px; cursor:pointer;
       box-shadow:0 6px 20px rgba(0,255,166,.25), inset 0 -2px 0 rgba(0,0,0,.15);
       transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
     }
-    button:hover{transform:translateY(-1px); filter:saturate(1.1)}
+    button:hover{transform:translateY(-1px); filter:saturate(1.12)}
     button:active{transform:translateY(0)}
     button.ghost{
-      background:transparent; color:var(--text); border:1px solid var(--edge);
+      background:transparent; color:var(--text); border:1px solid var(--neon);
       box-shadow:none;
     }
 
@@ -111,14 +120,21 @@
     .col-4{grid-column: span 4; min-width:280px}
     .col-6{grid-column: span 6; min-width:320px}
     .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; white-space:pre-wrap; word-break:break-word}
-    .muted{color:var(--muted)}
-    .tag{border:1px solid var(--border); padding:6px 10px; border-radius:999px; background:#12162a}
-    .ok{color:var(--ok)} .err{color:var(--err)}
+    .muted{color:var(--muted)} .ok{color:var(--ok)} .err{color:var(--err)}
+    .tag{border:1px solid var(--border); padding:6px 10px; border-radius:999px; background:#10162a}
+    .hide{display:none !important}
+    .fnCard{border:1px dashed var(--border); border-radius:12px; padding:12px; margin:10px 0}
+    .fnTitle{font-weight:700; margin-bottom:6px}
+    .pill{display:inline-block; font-size:12px; padding:3px 8px; border-radius:999px; background:#0d1430; border:1px solid var(--border); margin-left:6px}
+
     @media (max-width:1100px){ .grid{grid-template-columns: repeat(6,1fr)} }
     @media (max-width:720px) { .grid{grid-template-columns: repeat(1,1fr)} }
   </style>
 </head>
 <body>
+  <!-- starfield canvas -->
+  <canvas id="space"></canvas>
+
   <h1>HOLE — Control & Mint</h1>
 
   <!-- Top bar -->
@@ -133,32 +149,30 @@
       <button id="load" class="ghost">Load</button>
       <span class="tag" id="net">ChainId: ?</span>
       <button id="switchNet" class="ghost">Switch to this chain</button>
-      <button id="watchAsset" class="ghost">Add HOLE to MetaMask</button>
+      <button id="watchAsset" class="ghost">Add Token</button>
     </div>
   </div>
 
-  <div class="grid">
-    <div class="card col-4">
+  <!-- Your tailored dashboard -->
+  <div class="grid" id="vanillaDash">
+    <div class="card col-4" id="card-stats">
       <h2>Stats</h2>
       <div class="mono" id="stats">—</div>
       <div class="row" style="margin-top:10px;">
         <button id="refresh" class="ghost">Refresh</button>
-        <button id="copyAddr" class="ghost">Copy contract</button>
-        <button id="copyOwner" class="ghost">Copy owner</button>
       </div>
     </div>
 
-    <div class="card col-4">
+    <div class="card col-4" id="card-transferToggle">
       <h2>Transferability</h2>
       <div>transfersEnabled: <span class="mono" id="te">?</span></div>
       <div class="row" style="margin-top:10px;">
         <button id="lock">Lock (false)</button>
         <button id="unlock" class="ghost">Unlock (true)</button>
       </div>
-      <div class="muted" style="margin-top:6px">When locked, <b>transfer/transferFrom</b> revert.</div>
     </div>
 
-    <div class="card col-4">
+    <div class="card col-4" id="card-mintControls">
       <h2>Mint Controls</h2>
       <div>mintOpen: <span class="mono" id="mo">?</span></div>
       <div class="row" style="margin-top:8px;">
@@ -179,10 +193,10 @@
       </div>
     </div>
 
-    <div class="card col-3">
+    <div class="card col-3" id="card-mint">
       <h2>Mint</h2>
       <div class="row">
-        <label>Amount (whole HOLE)</label>
+        <label>Amount (whole)</label>
         <input id="amt" type="number" min="1" value="5" />
         <button id="mint">Mint</button>
       </div>
@@ -190,7 +204,7 @@
       <div class="muted mono" id="youMinted" style="margin-top:6px;">—</div>
     </div>
 
-    <div class="card col-3">
+    <div class="card col-3" id="card-balance">
       <h2>Balances</h2>
       <div class="row">
         <label>Address</label>
@@ -199,80 +213,50 @@
       </div>
       <div class="mono" id="balOut">—</div>
     </div>
+  </div>
 
-    <div class="card col-6">
-      <h2>ERC-20 Actions</h2>
-      <div class="row">
-        <label>Approve → Spender</label>
-        <input id="apSpender" size="40" placeholder="0xSpender..." />
-        <label>Amount (whole)</label>
-        <input id="apAmount" type="number" min="0" value="0" />
-        <button id="approve">Approve</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <label>Allowance Of</label>
-        <input id="alOwner" size="40" placeholder="owner 0x..." />
-        <label>To</label>
-        <input id="alSpender" size="40" placeholder="spender 0x..." />
-        <button id="readAllowance">Read allowance</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <label>Transfer → To</label>
-        <input id="tfTo" size="40" placeholder="0xRecipient..." />
-        <label>Amount (whole)</label>
-        <input id="tfAmount" type="number" min="0" value="0" />
-        <button id="transferBtn">Transfer</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <label>TransferFrom</label>
-        <input id="tffFrom" size="40" placeholder="from 0x..." />
-        <input id="tffTo" size="40" placeholder="to 0x..." />
-        <input id="tffAmount" type="number" min="0" value="0" />
-        <button id="transferFromBtn">TransferFrom</button>
-      </div>
+  <!-- ABI Playground -->
+  <div class="card" style="margin-top:16px;">
+    <h2>ABI Playground (auto-UI)</h2>
+    <div class="row">
+      <input id="abiFile" type="file" accept=".json,.abi,application/json" />
+      <button id="useAbiBtn">Use pasted ABI</button>
+      <button id="clearAbi" class="ghost">Reset ABI</button>
+      <span class="muted">Upload or paste ABI below; stays local.</span>
     </div>
+    <textarea id="abiText" placeholder='Paste ABI JSON here (e.g., [{"type":"function","name":"balanceOf",...}] )'></textarea>
+    <div class="row" style="margin-top:8px">
+      <span class="tag" id="abiStatus">No custom ABI loaded</span>
+    </div>
+  </div>
 
+  <div class="grid" id="abiUi" style="margin-top:12px">
     <div class="card col-6">
-      <h2>Owner Tools</h2>
-      <div class="row">
-        <label>New owner</label>
-        <input id="newOwner" size="44" placeholder="0x..." />
-        <button id="xferOwner">Transfer Ownership</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <label>Withdraw to</label>
-        <input id="to" size="44" placeholder="0xTreasury..." />
-        <button id="withdraw">Withdraw</button>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <button id="renounce" class="ghost">Danger: Renounce Ownership</button>
-      </div>
-      <div class="muted">Owner-only. Renounce is irreversible.</div>
+      <h2>Views (read)</h2>
+      <div id="views"></div>
+    </div>
+    <div class="card col-6">
+      <h2>Writes (tx)</h2>
+      <div id="writes"></div>
     </div>
   </div>
 
   <div id="log" class="mono" style="margin-top:16px;"></div>
 
-  <!-- App logic -->
   <script type="module">
   import { CONTRACT_ADDRESS } from './config.js';
 
-  const $ = (id) => document.getElementById(id);
+  const $ = id => document.getElementById(id);
   const log = (m, cls='') => { const n=document.createElement('div'); n.textContent=m; if(cls) n.className=cls; $('log').prepend(n); };
 
-  let provider, signer, contract, decimals = 18, abi, currentAccount = "", currentOwner = "", currentSymbol = "HOLE";
+  // ---------- Provider / contract ----------
+  let provider, signer, contract, decimals = 18, abi = null, defaultAbi = null, currentAccount = "";
 
   const normalize = (addr) => {
     addr = (addr || "").trim();
     if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) throw new Error("invalid address format");
     return addr.toLowerCase();
   };
-
-  async function loadAbi() {
-    const r = await fetch('./abi.json', { cache: 'no-store' });
-    if (!r.ok) throw new Error('abi.json not found');
-    return await r.json();
-  }
 
   async function connect() {
     if (!window.ethereum) { alert('Install MetaMask'); return; }
@@ -283,10 +267,10 @@
     $('who').textContent = 'Connected: ' + currentAccount;
     const n = await provider.getNetwork();
     $('net').textContent = `ChainId: ${n.chainId}`;
-    if (window.ethereum && !window._holeListeners) {
+    if (window.ethereum && !window._listeners) {
       window.ethereum.on('chainChanged', () => location.reload());
       window.ethereum.on('accountsChanged', () => location.reload());
-      window._holeListeners = true;
+      window._listeners = true;
     }
   }
 
@@ -294,202 +278,280 @@
     const code = await (signer?.provider || provider).getCode(address);
     if (!code || code === '0x' || code === '0x0') {
       const n = await provider.getNetwork();
-      throw new Error(`No contract code at ${address} on chainId ${n.chainId}. Check network or address.`);
+      throw new Error(`No contract code at ${address} on chainId ${n.chainId}.`);
     }
   }
 
-  function load(address) {
-    (async () => {
-      try {
-        if (!abi) throw new Error('ABI not loaded yet');
-        const norm = normalize(address);
-        await ensureDeployed(norm);
-        contract = new ethers.Contract(norm, abi, signer || provider);
-        $('addr').value = norm;
-        log(`Loaded contract ${norm}`);
-      } catch (e) { log('load error: ' + (e?.message || e), 'err'); }
-    })();
+  function setContract(address){
+    contract = new ethers.Contract(address, abi || defaultAbi, signer || provider);
   }
 
-  async function refresh() {
+  // ---------- Default tailored dashboard ----------
+  async function refreshVanilla() {
     if (!contract) return;
     try {
-      const [nm, sym, dec, ts, own, ppw, left, mo, te, cap] = await Promise.all([
-        contract.name(), contract.symbol(), contract.decimals(),
-        contract.totalSupply(), contract.owner(),
-        contract.pricePerTokenWei(), contract.tokensLeft(),
-        contract.mintOpen(), contract.transfersEnabled(),
-        contract.walletMintCap ? contract.walletMintCap() : Promise.resolve(0)
+      const [nm, sym, dec, ts, own] = await Promise.allSettled([
+        contract.name?.(), contract.symbol?.(), contract.decimals?.(),
+        contract.totalSupply?.(), contract.owner?.()
       ]);
-      currentOwner = own.toLowerCase();
-      currentSymbol = sym; decimals = dec;
+      if (dec.value) decimals = dec.value;
 
-      $('ppw').textContent = ppw.toString();
-      $('mo').textContent = mo;
-      $('te').textContent = te;
-      $('cap').textContent = (cap||0).toString();
+      const stats = [];
+      if (nm.value) stats.push(`name: ${nm.value}`);
+      if (sym.value) stats.push(`symbol: ${sym.value}`);
+      if (dec.value) stats.push(`decimals: ${dec.value}`);
+      if (ts.value && sym.value) stats.push(`totalSupply: ${ethers.utils.formatUnits(ts.value, dec.value)} ${sym.value}`);
+      if (contract.tokensLeft) {
+        const left = await contract.tokensLeft();
+        stats.push(`${sym.value||'TOKEN'} tokensLeft: ${left.toString()} (whole)`);
+      }
+      if (own.value) stats.push(`owner:\n${own.value}`);
+      $('stats').textContent = stats.join('\n') || '—';
 
-      $('stats').innerHTML =
-        `name: ${nm}   symbol: ${sym}\n`+
-        `decimals: ${dec}   totalSupply: ${ethers.utils.formatUnits(ts, dec)} ${sym}\n`+
-        `${sym} tokensLeft: ${left.toString()} (whole)\n`+
-        `owner:\n${own}`;
-
-      const minted = (contract.mintedWhole && currentAccount)
-        ? await contract.mintedWhole(currentAccount)
-        : ethers.BigNumber.from(0);
-      $('mintNote').textContent = `Mint cost = amount * pricePerTokenWei (auto-sent).`;
-      $('youMinted').textContent = `You minted so far: ${minted.toString()} / cap ${(cap||0).toString()} (whole; 0 cap = unlimited)`;
+      if (contract.transfersEnabled) $('te').textContent = String(await contract.transfersEnabled());
+      if (contract.mintOpen) $('mo').textContent = String(await contract.mintOpen());
+      if (contract.pricePerTokenWei) $('ppw').textContent = (await contract.pricePerTokenWei()).toString();
+      if (contract.walletMintCap) {
+        const cap = await contract.walletMintCap();
+        $('cap').textContent = cap.toString();
+        if (contract.mintedWhole) {
+          const minted = await contract.mintedWhole(currentAccount);
+          $('youMinted').textContent = `You minted so far: ${minted.toString()} / cap ${cap.toString()} (whole; 0 = unlimited)`;
+        }
+      }
+      $('mintNote').textContent = contract.pricePerTokenWei ? 'Mint cost = amount * pricePerTokenWei (auto-sent).' : '—';
     } catch (e) { log('refresh error: ' + (e?.reason || e?.message || e), 'err'); }
   }
 
-  // ---- Admin
-  async function setTransfers(enabled){try{
-    const tx=await contract.setTransfersEnabled(enabled);
-    log(`setTransfersEnabled(${enabled}) tx: ${tx.hash}`); await tx.wait(); log('✓ transfersEnabled='+enabled,'ok'); await refresh();
-  }catch(e){log('setTransfersEnabled error: '+(e?.reason||e?.message||e),'err');}}
+  // Vanilla actions
+  $('refresh').onclick = refreshVanilla;
+  $('lock').onclick = async () => { if(!contract?.setTransfersEnabled) return; const tx = await contract.setTransfersEnabled(false); log('setTransfersEnabled(false): '+tx.hash); await tx.wait(); await refreshVanilla(); };
+  $('unlock').onclick = async () => { if(!contract?.setTransfersEnabled) return; const tx = await contract.setTransfersEnabled(true);  log('setTransfersEnabled(true): '+tx.hash);  await tx.wait(); await refreshVanilla(); };
+  $('pause').onclick = async () => { if(!contract?.setMintOpen) return; const tx = await contract.setMintOpen(false); log('setMintOpen(false): '+tx.hash); await tx.wait(); await refreshVanilla(); };
+  $('unpause').onclick = async () => { if(!contract?.setMintOpen) return; const tx = await contract.setMintOpen(true);  log('setMintOpen(true): '+tx.hash);  await tx.wait(); await refreshVanilla(); };
+  $('setPrice').onclick = async () => { if(!contract?.setPrice) return; const wei = ethers.BigNumber.from(($('newPrice').value||'').trim()); const tx = await contract.setPrice(wei); log('setPrice: '+tx.hash); await tx.wait(); await refreshVanilla(); };
+  $('setCap').onclick = async () => { if(!contract?.setWalletMintCap) return; const cap = ethers.BigNumber.from(($('newCap').value||'').trim()); const tx = await contract.setWalletMintCap(cap); log('setWalletMintCap: '+tx.hash); await tx.wait(); await refreshVanilla(); };
+  $('mint').onclick = async () => {
+    if(!contract?.mint) return alert('mint() not available');
+    const amount = ethers.BigNumber.from(String($('amt').value||'0')); if (amount.lte(0)) return;
+    let value = ethers.BigNumber.from(0);
+    if (contract.pricePerTokenWei) value = (await contract.pricePerTokenWei()).mul(amount);
+    const tx = await contract.mint(amount, { value }); log('mint: '+tx.hash); await tx.wait(); await refreshVanilla();
+  };
+  $('readBal').onclick = async () => {
+    if(!contract?.balanceOf) return;
+    const a = normalize(($('balAddr').value||'').trim());
+    const bal = await contract.balanceOf(a);
+    $('balOut').textContent = decimals ? ethers.utils.formatUnits(bal, decimals) : bal.toString();
+  };
 
-  async function setMint(open){try{
-    const tx=await contract.setMintOpen(open);
-    log(`setMintOpen(${open}) tx: ${tx.hash}`); await tx.wait(); log('✓ mintOpen='+open,'ok'); await refresh();
-  }catch(e){log('setMintOpen error: '+(e?.reason||e?.message||e),'err');}}
+  // ---------- ABI Playground (auto UI) ----------
+  const stringify = (x) => JSON.stringify(x, (k,v)=> ethers.BigNumber.isBigNumber(v)? v.toString() : v, 2);
+  const fullSig = (fn) => `${fn.name}(${(fn.inputs||[]).map(i=>i.type).join(',')})`;
 
-  async function setPrice(){try{
-    const v=$('newPrice').value.trim(); if(!v) return alert('enter new price in wei');
-    const wei=ethers.BigNumber.from(v);
-    const tx=await contract.setPrice(wei);
-    log(`setPrice(${wei.toString()}) tx: ${tx.hash}`); await tx.wait(); log('✓ price updated','ok'); await refresh();
-  }catch(e){log('setPrice error: '+(e?.reason||e?.message||e),'err');}}
+  function parseArg(type, value){
+    const t = type.trim();
+    const arr = t.match(/(.*)\[\]$/);
+    if (arr) { // arrays: JSON or comma list
+      try { const parsed = JSON.parse(value); if(Array.isArray(parsed)) return parsed.map(v => parseArg(arr[1], typeof v === 'string' ? v : JSON.stringify(v))); } catch {}
+      return value.split(',').map(s => parseArg(arr[1], s.trim()));
+    }
+    if (t.startsWith('tuple')) { try { return JSON.parse(value); } catch { throw new Error('Provide tuple as JSON'); } }
+    if (t.startsWith('uint') || t.startsWith('int')) return ethers.BigNumber.from(value);
+    if (t === 'address') return normalize(value);
+    if (t === 'bool') return ['true','1','yes','y'].includes(String(value).toLowerCase());
+    if (t.startsWith('bytes')) return value;
+    if (t === 'string') return value;
+    return value;
+  }
 
-  async function setCap(){try{
-    const v=$('newCap').value.trim(); if(v==="") return alert('enter new cap (whole)');
-    const capWhole=ethers.BigNumber.from(v);
-    const tx=await contract.setWalletMintCap(capWhole);
-    log(`setWalletMintCap(${capWhole.toString()}) tx: ${tx.hash}`); await tx.wait(); log('✓ cap updated','ok'); await refresh();
-  }catch(e){log('setCap error: '+(e?.reason||e?.message||e),'err');}}
+  function buildFnCard(container, fn, write=false){
+    const sig = fullSig(fn);
+    const el = document.createElement('div'); el.className = 'fnCard';
+    const title = document.createElement('div'); title.className = 'fnTitle'; title.textContent = sig;
+    const pill = document.createElement('span'); pill.className='pill'; pill.textContent = write ? (fn.stateMutability==='payable'?'payable':'nonpayable') : 'view';
+    title.appendChild(pill); el.appendChild(title);
 
-  // ---- Mint
-  async function doMint(){try{
-    const amount=ethers.BigNumber.from(String($('amt').value||'0'));
-    if(amount.lte(0)) return alert('amount > 0');
-    if(contract.walletMintCap && contract.mintedWhole){
-      const cap=await contract.walletMintCap();
-      if(cap.gt(0)){
-        const minted=await contract.mintedWhole(currentAccount);
-        if(minted.add(amount).gt(cap)) return alert(`wallet cap exceeded: minted ${minted.toString()} + amount ${amount.toString()} > cap ${cap.toString()}`);
+    const inputsWrap = document.createElement('div'); inputsWrap.className='row';
+    const inputs = [];
+    (fn.inputs||[]).forEach((inp,i)=>{ const f=document.createElement('input'); f.placeholder=`${inp.name||'arg'+i} : ${inp.type}`; f.style.minWidth='200px'; inputsWrap.appendChild(f); inputs.push(f); });
+    let valueField=null;
+    if(write && fn.stateMutability==='payable'){ valueField=document.createElement('input'); valueField.placeholder='msg.value (wei)'; valueField.style.minWidth='200px'; inputsWrap.appendChild(valueField); }
+    el.appendChild(inputsWrap);
+
+    const actions=document.createElement('div'); actions.className='row'; actions.style.marginTop='8px';
+    const btn=document.createElement('button'); btn.textContent = write? 'Send Tx':'Call'; actions.appendChild(btn); el.appendChild(actions);
+    const out=document.createElement('div'); out.className='mono muted'; out.style.marginTop='8px'; el.appendChild(out);
+
+    btn.onclick = async ()=>{
+      if(!contract) return alert('Load a contract first');
+      try{
+        const args=(fn.inputs||[]).map((inp,i)=>parseArg(inp.type, inputs[i].value));
+        if(write){
+          const opts={}; if(valueField && valueField.value.trim()!=='') opts.value = ethers.BigNumber.from(valueField.value.trim());
+          const tx = await contract[sig](...args, opts); out.textContent=`tx: ${tx.hash}`; await tx.wait(); out.textContent=`✓ success: ${tx.hash}`;
+        }else{
+          const res = await contract[sig](...args); out.textContent = stringify(res);
+        }
+      }catch(e){ out.textContent = 'error: ' + (e?.reason || e?.message || e); }
+    };
+
+    container.appendChild(el);
+  }
+
+  function buildAbiUi(){
+    $('views').innerHTML=''; $('writes').innerHTML='';
+    if(!abi) return;
+    const fns=abi.filter(x=>x.type==='function');
+    const views=fns.filter(f=>f.stateMutability==='view'||f.stateMutability==='pure');
+    const writes=fns.filter(f=>f.stateMutability==='nonpayable'||f.stateMutability==='payable');
+    views.forEach(fn=>buildFnCard($('views'), fn, false));
+    writes.forEach(fn=>buildFnCard($('writes'), fn, true));
+    $('abiStatus').textContent = `Custom ABI loaded: ${views.length} view, ${writes.length} write`;
+  }
+
+  async function loadDefaultAbi(){
+    const r=await fetch('./abi.json',{cache:'no-store'}); defaultAbi = await r.json();
+  }
+
+  // Top bar actions
+  $('connect').onclick = connect;
+  $('load').onclick = async () => {
+    try{ const addr = normalize(($('addr').value||'').trim()); await ensureDeployed(addr); setContract(addr); log('Loaded contract '+addr); await refreshVanilla(); }
+    catch(e){ log('load error: '+(e?.message||e),'err'); }
+  };
+  $('switchNet').onclick = async () => {
+    try { const n=await provider.getNetwork(); await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x'+n.chainId.toString(16)}]}); }
+    catch(e){ log('switch error: '+(e?.message||e),'err'); }
+  };
+  $('watchAsset').onclick = async () => {
+    try{ const addr=($('addr').value||'').trim();
+      await window.ethereum.request({ method:'wallet_watchAsset', params:{ type:'ERC20', options:{ address:addr, symbol:'TOKEN', decimals } }});
+    }catch(e){ log('watchAsset error: '+(e?.message||e),'err'); }
+  };
+
+  // ABI upload/paste
+  $('abiFile').onchange = async (ev)=>{ const file=ev.target.files?.[0]; if(!file) return; const text=await file.text(); $('abiText').value=text; };
+  $('useAbiBtn').onclick = ()=>{ try{ const text=$('abiText').value.trim(); if(!text) return alert('Paste ABI JSON first.');
+      const parsed=JSON.parse(text); abi = Array.isArray(parsed)? parsed : (parsed.abi||null); if(!Array.isArray(abi)) throw new Error('Invalid ABI');
+      localStorage.setItem('customABI', JSON.stringify(abi)); buildAbiUi(); $('abiStatus').textContent='Custom ABI loaded (saved locally)'; const addr=($('addr').value||'').trim(); if(addr) setContract(addr);
+    }catch(e){ log('ABI error: '+(e?.message||e),'err'); } };
+  $('clearAbi').onclick = ()=>{ abi=null; localStorage.removeItem('customABI'); $('abiText').value=''; $('abiStatus').textContent='No custom ABI loaded'; buildAbiUi(); const addr=($('addr').value||'').trim(); if(addr) setContract(addr); };
+
+  // Boot
+  (async ()=> {
+    await loadDefaultAbi();
+    $('addr').value = (CONTRACT_ADDRESS || '').toLowerCase();
+    try{ await connect(); }catch{}
+    if (CONTRACT_ADDRESS) { try{ const a=normalize(CONTRACT_ADDRESS); await ensureDeployed(a); setContract(a); await refreshVanilla(); }catch{} }
+    try{ const saved=localStorage.getItem('customABI'); if(saved){ abi=JSON.parse(saved); buildAbiUi(); $('abiStatus').textContent='Custom ABI loaded (restored)'; } }catch{}
+  })();
+
+  // ---------- Starfield + shooting stars (canvas) ----------
+  (function starfield(){
+    const canvas = document.getElementById('space');
+    const ctx = canvas.getContext('2d');
+    let w=0,h=0, dpr=1;
+    const stars=[], SHOOTERS=[];
+    const STAR_COUNT = 140;        // twinkling dots
+    const SHOOT_RATE = 0.12;       // avg shooters per second
+    const MAX_SHOOTERS = 2;
+
+    function resize(){
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.width = Math.floor(innerWidth * dpr);
+      h = canvas.height = Math.floor(innerHeight * dpr);
+      canvas.style.width = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+    }
+
+    function rand(a,b){ return a + Math.random()*(b-a); }
+
+    function makeStar(){
+      return {
+        x: Math.random()*w,
+        y: Math.random()*h,
+        r: rand(0.6, 1.8)*dpr,
+        a: rand(0.35, 0.85),
+        v: rand(0.02, 0.08)*dpr,
+        tw: rand(0.005, 0.02),
+      };
+    }
+
+    function makeShooter(){
+      // spawn mostly from top-left heading down-right
+      const fromLeft = Math.random() < 0.6;
+      const startX = fromLeft ? -50*dpr : rand(0.2*w, 0.8*w);
+      const startY = fromLeft ? rand(0, 0.25*h) : -50*dpr;
+      const speed = rand(6, 9)*dpr; // px/frame
+      const angle = fromLeft ? rand(20, 35)*Math.PI/180 : rand(75, 100)*Math.PI/180;
+      return {
+        x: startX, y: startY, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+        life: 0, maxLife: rand(45, 65), // frames
+        size: rand(1.2, 2.1)*dpr, glow: rand(0.35, 0.55)
+      };
+    }
+
+    function init(){
+      resize();
+      stars.length = 0;
+      for(let i=0;i<STAR_COUNT;i++) stars.push(makeStar());
+      lastTime = performance.now();
+      raf();
+    }
+
+    let lastTime = 0, acc = 0;
+    function raf(ts){
+      requestAnimationFrame(raf);
+      const dt = Math.min(33, (ts - lastTime)||16); lastTime = ts;
+      acc += dt/1000;
+
+      // spawn shooters probabilistically
+      if (SHOOTERS.length < MAX_SHOOTERS && acc > 0){
+        const p = SHOOT_RATE * (dt/1000);
+        if (Math.random() < p) SHOOTERS.push(makeShooter());
+      }
+
+      // draw
+      ctx.clearRect(0,0,w,h);
+
+      // stars (twinkle + slight drift)
+      for(const s of stars){
+        s.a += s.tw * (Math.random() > .5 ? 1 : -1);
+        s.a = Math.max(0.15, Math.min(1, s.a));
+        s.x += s.v * 0.15; if (s.x > w+10) s.x = -10;
+        ctx.globalAlpha = s.a;
+        ctx.fillStyle = '#cfe9ff';
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+      }
+
+      // shooters
+      for (let i=SHOOTERS.length-1; i>=0; i--){
+        const s = SHOOTERS[i];
+        s.life++;
+        s.x += s.vx; s.y += s.vy;
+
+        // trail
+        const trailLen = 110*dpr;
+        const grad = ctx.createLinearGradient(s.x, s.y, s.x - s.vx*12, s.y - s.vy*12);
+        grad.addColorStop(0, `rgba(255,255,255,${0.85*s.glow})`);
+        grad.addColorStop(1, `rgba(51,221,255,0)`);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = grad; ctx.lineWidth = s.size;
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx*2, s.y - s.vy*2); ctx.stroke();
+
+        // head
+        ctx.fillStyle = 'rgba(255,255,255,.95)';
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.size*0.9, 0, Math.PI*2); ctx.fill();
+
+        if (s.life > s.maxLife || s.x < -trailLen || s.y < -trailLen || s.x > w+trailLen || s.y > h+trailLen){
+          SHOOTERS.splice(i,1);
+        }
       }
     }
-    const price=await contract.pricePerTokenWei();
-    const value=price.mul(amount);
-    const tx=await contract.mint(amount,{ value });
-    log(`mint(${amount.toString()}) value=${value.toString()} tx: ${tx.hash}`); await tx.wait(); log('✓ minted','ok'); await refresh();
-  }catch(e){log('mint error: '+(e?.reason||e?.message||e),'err');}}
 
-  // ---- ERC-20
-  async function approveSpender(){try{
-    const spender=normalize($('apSpender').value); const amtWhole=String($('apAmount').value||'0');
-    const amt=ethers.utils.parseUnits(amtWhole, decimals);
-    const tx=await contract.approve(spender, amt);
-    log(`approve(${spender}, ${amtWhole}) tx: ${tx.hash}`); await tx.wait(); log('✓ approved','ok');
-  }catch(e){log('approve error: '+(e?.reason||e?.message||e),'err');}}
-
-  async function readAllowance(){try{
-    const owner=normalize($('alOwner').value); const spender=normalize($('alSpender').value);
-    const a=await contract.allowance(owner, spender);
-    log(`allowance(${owner}, ${spender}) = ${ethers.utils.formatUnits(a, decimals)} ${currentSymbol}`);
-  }catch(e){log('allowance error: '+(e?.reason||e?.message||e),'err');}}
-
-  async function doTransfer(){try{
-    const to=normalize($('tfTo').value); const amtWhole=String($('tfAmount').value||'0');
-    const amt=ethers.utils.parseUnits(amtWhole, decimals);
-    const tx=await contract.transfer(to, amt);
-    log(`transfer(${to}, ${amtWhole}) tx: ${tx.hash}`); await tx.wait(); log('✓ transfer done','ok'); await refresh();
-  }catch(e){log('transfer error: '+(e?.reason||e?.message||e),'err');}}
-
-  async function doTransferFrom(){try{
-    const from=normalize($('tffFrom').value); const to=normalize($('tffTo').value); const amtWhole=String($('tffAmount').value||'0');
-    const amt=ethers.utils.parseUnits(amtWhole, decimals);
-    const tx=await contract.transferFrom(from, to, amt);
-    log(`transferFrom(${from} → ${to}, ${amtWhole}) tx: ${tx.hash}`); await tx.wait(); log('✓ transferFrom done','ok'); await refresh();
-  }catch(e){log('transferFrom error: '+(e?.reason||e?.message||e),'err');}}
-
-  // ---- Owner tools
-  async function transferOwner(){try{
-    const newOwner=normalize($('newOwner').value);
-    const tx=await contract.transferOwnership(newOwner);
-    log('transferOwnership tx: '+tx.hash); await tx.wait(); log('✓ ownership transferred','ok'); await refresh();
-  }catch(e){log('transferOwnership error: '+(e?.reason||e?.message||e),'err');}}
-
-  async function withdraw(){try{
-    const to=normalize($('to').value);
-    const tx=await contract.withdraw(to);
-    log('withdraw tx: '+tx.hash); await tx.wait(); log('✓ withdraw done','ok');
-  }catch(e){log('withdraw error: '+(e?.reason||e?.message||e),'err');}}
-
-  async function renounce(){
-    if(!confirm('Are you sure? Renouncing ownership is irreversible.')) return;
-    try{
-      const tx=await contract.renounceOwnership();
-      log('renounceOwnership tx: '+tx.hash); await tx.wait(); log('✓ ownership renounced','ok'); await refresh();
-    }catch(e){log('renounceOwnership error: '+(e?.reason||e?.message||e),'err');}
-  }
-
-  // ---- Helpers
-  async function readBal(){try{
-    const a=normalize($('balAddr').value);
-    const bal=await contract.balanceOf(a);
-    $('balOut').textContent=ethers.utils.formatUnits(bal, decimals)+' '+currentSymbol;
-  }catch(e){log('balanceOf error: '+(e?.reason||e?.message||e),'err');}}
-
-  async function switchNet(){
-    try{
-      const n=await provider.getNetwork();
-      await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId:'0x'+n.chainId.toString(16)}] });
-    }catch(e){ log('switch error (add network in MetaMask if needed): '+(e?.message||e),'err'); }
-  }
-
-  async function watchAsset(){
-    try{
-      const addr=$('addr').value.trim();
-      await window.ethereum.request({
-        method:'wallet_watchAsset',
-        params:{ type:'ERC20', options:{ address:addr, symbol:currentSymbol, decimals } }
-      });
-    }catch(e){ log('watchAsset error: '+(e?.message||e),'err'); }
-  }
-
-  function copy(text){ navigator.clipboard.writeText(text).then(()=>log('copied','ok')); }
-
-  // wire up
-  $('connect').onclick = connect;
-  $('load').onclick = async () => { load($('addr').value.trim()); await refresh(); };
-  $('refresh').onclick = refresh;
-  $('lock').onclick = () => setTransfers(false);
-  $('unlock').onclick = () => setTransfers(true);
-  $('pause').onclick = () => setMint(false);
-  $('unpause').onclick = () => setMint(true);
-  $('setPrice').onclick = setPrice;
-  $('setCap').onclick = setCap;
-  $('mint').onclick = doMint;
-  $('readBal').onclick = readBal;
-  $('approve').onclick = approveSpender;
-  $('readAllowance').onclick = readAllowance;
-  $('transferBtn').onclick = doTransfer;
-  $('transferFromBtn').onclick = doTransferFrom;
-  $('xferOwner').onclick = transferOwner;
-  $('withdraw').onclick = withdraw;
-  $('renounce').onclick = renounce;
-  $('switchNet').onclick = switchNet;
-  $('watchAsset').onclick = watchAsset;
-  $('copyAddr').onclick = () => copy($('addr').value.trim());
-  $('copyOwner').onclick = () => copy(currentOwner);
-
-  // boot
-  (async () => {
-    try { abi = await loadAbi(); } catch (e) { log('ABI load failed: ' + e.message, 'err'); }
-    $('addr').value = (CONTRACT_ADDRESS || "").toLowerCase();
-    try { await connect(); } catch {}
-    if (CONTRACT_ADDRESS) { load(CONTRACT_ADDRESS); try { await refresh(); } catch {} }
+    window.addEventListener('resize', resize);
+    init();
   })();
   </script>
 </body>
