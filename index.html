@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <title>HOLE Admin & Mint</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; background:#0f1220; color:#e8eaf6; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin:24px; background:#0f1220; color:#e8eaf6; }
     .card { background:#171b2e; padding:16px; border-radius:14px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.3); }
     .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     label { font-size:14px; opacity:.9; }
@@ -14,13 +15,14 @@
     button.ghost { background:transparent; border:1px solid #5865f2; }
     h2 { margin:.2rem 0 .6rem; }
     .muted { opacity:.8; }
-    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:16px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
     .ok { color:#7CFC98; } .err { color:#ff8080; }
   </style>
 </head>
 <body>
   <h1>HOLE — Control & Mint</h1>
+
   <div class="card">
     <div class="row">
       <button id="connect">Connect MetaMask</button>
@@ -65,6 +67,12 @@
         <input id="newPrice" placeholder="e.g. 1000000000000000" />
         <button id="setPrice">Set Price</button>
       </div>
+      <div style="margin-top:10px;">walletMintCap (whole): <span class="mono" id="cap">?</span></div>
+      <div class="row" style="margin-top:8px;">
+        <label>Set cap (whole)</label>
+        <input id="newCap" placeholder="0 => unlimited" />
+        <button id="setCap">Set Cap</button>
+      </div>
     </div>
 
     <div class="card">
@@ -75,6 +83,7 @@
         <button id="mint">Mint</button>
       </div>
       <div class="muted mono" id="mintNote" style="margin-top:8px;">—</div>
+      <div class="muted mono" id="youMinted" style="margin-top:6px;">—</div>
     </div>
 
     <div class="card">
@@ -100,46 +109,63 @@
 
   <div id="log" class="mono" style="margin-top:16px;"></div>
 
-  <script type="module">
-    import { CONTRACT_ADDRESS } from './config.js';
-  </script>
+  <!-- Ethers v5 UMD -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+  <!-- App logic -->
   <script type="module">
-    import abi from './abi.json' assert { type: 'json' };
-    import { CONTRACT_ADDRESS } from './config.js';
+  import { CONTRACT_ADDRESS } from './config.js';
 
-    let provider, signer, contract, decimals = 18;
+  const $ = (id) => document.getElementById(id);
+  const log = (m, cls='') => { const n=document.createElement('div'); n.textContent=m; if(cls) n.className=cls; $('log').prepend(n); };
 
-    const $ = id => document.getElementById(id);
-    const log = (m, cls='') => { const n=document.createElement('div'); n.textContent=m; if(cls) n.className=cls; $('log').prepend(n); };
+  let provider, signer, contract, decimals = 18, abi, currentAccount = "";
 
-    async function connect() {
-      if (!window.ethereum) { alert('Install MetaMask'); return; }
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send('eth_requestAccounts', []);
-      signer = provider.getSigner();
-      $('who').textContent = 'Connected: ' + await signer.getAddress();
-      const n = await provider.getNetwork();
-      $('net').textContent = `ChainId: ${n.chainId}`;
-    }
+  const normalize = (addr) => {
+    addr = (addr || "").trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) throw new Error("invalid address format");
+    return addr.toLowerCase();
+  };
 
-    function load(address) {
-      contract = new ethers.Contract(address, abi, signer || provider);
-      $('addr').value = address;
-    }
+  async function loadAbi() {
+    const r = await fetch('./abi.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('abi.json not found');
+    return await r.json();
+  }
 
-    async function refresh() {
-      if (!contract) return;
-      const [nm, sym, dec, ts, own, ppw, left, mo, te] = await Promise.all([
+  async function connect() {
+    if (!window.ethereum) { alert('Install MetaMask'); return; }
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+    signer = provider.getSigner();
+    currentAccount = (await signer.getAddress()).toLowerCase();
+    $('who').textContent = 'Connected: ' + currentAccount;
+    const n = await provider.getNetwork();
+    $('net').textContent = `ChainId: ${n.chainId}`;
+  }
+
+  function load(address) {
+    if (!abi) { log('ABI not loaded yet'); return; }
+    const norm = normalize(address);
+    contract = new ethers.Contract(norm, abi, signer || provider);
+    $('addr').value = norm;
+  }
+
+  async function refresh() {
+    if (!contract) return;
+    try {
+      const [nm, sym, dec, ts, own, ppw, left, mo, te, cap] = await Promise.all([
         contract.name(), contract.symbol(), contract.decimals(),
         contract.totalSupply(), contract.owner(),
         contract.pricePerTokenWei(), contract.tokensLeft(),
-        contract.mintOpen(), contract.transfersEnabled()
+        contract.mintOpen(), contract.transfersEnabled(),
+        contract.walletMintCap()
       ]);
       decimals = dec;
       $('ppw').textContent = ppw.toString();
       $('mo').textContent = mo;
       $('te').textContent = te;
+      $('cap').textContent = cap.toString();
       $('stats').innerHTML =
         `name: ${nm}\n`+
         `symbol: ${sym}\n`+
@@ -147,78 +173,111 @@
         `totalSupply: ${ethers.utils.formatUnits(ts, dec)} ${sym}\n`+
         `tokensLeft: ${left.toString()} (whole)\n`+
         `owner: ${own}`;
-      $('mintNote').textContent = `Mint cost = amount * pricePerTokenWei (auto-sent).`;
-    }
 
-    async function setTransfers(enabled) {
+      const minted = currentAccount ? await contract.mintedWhole(currentAccount) : ethers.BigNumber.from(0);
+      $('mintNote').textContent = `Mint cost = amount * pricePerTokenWei (auto-sent).`;
+      $('youMinted').textContent = `You minted so far: ${minted.toString()} / cap ${cap.toString()} (whole; 0 cap = unlimited)`;
+    } catch (e) {
+      log('refresh error: ' + (e?.reason || e?.message), 'err');
+    }
+  }
+
+  async function setTransfers(enabled) {
+    try {
       const tx = await contract.setTransfersEnabled(enabled);
       log(`setTransfersEnabled(${enabled}) tx: ${tx.hash}`);
-      await tx.wait(); log('✓ transfers enabled = '+enabled, 'ok'); await refresh();
-    }
+      await tx.wait(); log('✓ transfers enabled = ' + enabled, 'ok'); await refresh();
+    } catch (e) { log('setTransfersEnabled error: ' + (e?.reason || e?.message), 'err'); }
+  }
 
-    async function setMint(open) {
+  async function setMint(open) {
+    try {
       const tx = await contract.setMintOpen(open);
       log(`setMintOpen(${open}) tx: ${tx.hash}`);
-      await tx.wait(); log('✓ mintOpen = '+open, 'ok'); await refresh();
-    }
+      await tx.wait(); log('✓ mintOpen = ' + open, 'ok'); await refresh();
+    } catch (e) { log('setMintOpen error: ' + (e?.reason || e?.message), 'err'); }
+  }
 
-    async function setPrice() {
+  async function setPrice() {
+    try {
       const v = $('newPrice').value.trim();
       if (!v) return alert('enter new price in wei');
       const wei = ethers.BigNumber.from(v);
       const tx = await contract.setPrice(wei);
       log(`setPrice(${wei.toString()}) tx: ${tx.hash}`);
       await tx.wait(); log('✓ price updated', 'ok'); await refresh();
-    }
+    } catch (e) { log('setPrice error: ' + (e?.reason || e?.message), 'err'); }
+  }
 
-    async function doMint() {
+  async function setCap() {
+    try {
+      const v = $('newCap').value.trim();
+      if (v === "") return alert('enter new cap in WHOLE tokens (0 => unlimited)');
+      const capWhole = ethers.BigNumber.from(v);
+      const tx = await contract.setWalletMintCap(capWhole);
+      log(`setWalletMintCap(${capWhole.toString()}) tx: ${tx.hash}`);
+      await tx.wait(); log('✓ cap updated', 'ok'); await refresh();
+    } catch (e) { log('setCap error: ' + (e?.reason || e?.message), 'err'); }
+  }
+
+  async function doMint() {
+    try {
       const amount = ethers.BigNumber.from(String($('amt').value || '0'));
       if (amount.lte(0)) return alert('amount > 0');
+      // local check against cap (UI-side)
+      const cap = await contract.walletMintCap();
+      if (cap.gt(0)) {
+        const minted = await contract.mintedWhole(currentAccount);
+        if (minted.add(amount).gt(cap)) {
+          return alert(`wallet cap exceeded: minted ${minted.toString()} + amount ${amount.toString()} > cap ${cap.toString()}`);
+        }
+      }
       const price = await contract.pricePerTokenWei();
       const value = price.mul(amount);
       const tx = await contract.mint(amount, { value });
       log(`mint(${amount.toString()}) value=${value.toString()} tx: ${tx.hash}`);
       await tx.wait(); log('✓ minted', 'ok'); await refresh();
-    }
+    } catch (e) { log('mint error: ' + (e?.reason || e?.message), 'err'); }
+  }
 
-    async function readBal() {
-      const a = $('balAddr').value.trim();
-      if (!a) return alert('enter address');
+  async function readBal() {
+    try {
+      const a = normalize($('balAddr').value);
       const bal = await contract.balanceOf(a);
       $('balOut').textContent = ethers.utils.formatUnits(bal, decimals) + ' HOLE';
-    }
+    } catch (e) { log('balanceOf error: ' + (e?.reason || e?.message), 'err'); }
+  }
 
-    async function withdraw() {
-      const to = $('to').value.trim();
-      if (!to) return alert('enter destination address');
+  async function withdraw() {
+    try {
+      const to = normalize($('to').value);
       const tx = await contract.withdraw(to);
-      log('withdraw tx: '+tx.hash);
+      log('withdraw tx: ' + tx.hash);
       await tx.wait(); log('✓ withdraw done', 'ok');
-    }
+    } catch (e) { log('withdraw error: ' + (e?.reason || e?.message), 'err'); }
+  }
 
-    // wire up
-    $('connect').onclick = connect;
-    $('load').onclick = async () => { load($('addr').value.trim()); await refresh(); };
-    $('refresh').onclick = refresh;
+  // hook up UI
+  $('connect').onclick = connect;
+  $('load').onclick = async () => { load($('addr').value.trim()); await refresh(); };
+  $('refresh').onclick = refresh;
+  $('lock').onclick = () => setTransfers(false);
+  $('unlock').onclick = () => setTransfers(true);
+  $('pause').onclick = () => setMint(false);
+  $('unpause').onclick = () => setMint(true);
+  $('setPrice').onclick = setPrice;
+  $('setCap').onclick = setCap;
+  $('mint').onclick = doMint;
+  $('readBal').onclick = readBal;
+  $('withdraw').onclick = withdraw;
 
-    $('lock').onclick = () => setTransfers(false);
-    $('unlock').onclick = () => setTransfers(true);
-
-    $('pause').onclick = () => setMint(false);
-    $('unpause').onclick = () => setMint(true);
-
-    $('setPrice').onclick = setPrice;
-    $('mint').onclick = doMint;
-    $('readBal').onclick = readBal;
-    $('withdraw').onclick = withdraw;
-
-    // boot
-    $('addr').value = CONTRACT_ADDRESS;
-    window.addEventListener('load', async () => {
-      try { await connect(); } catch {}
-      load(CONTRACT_ADDRESS);
-      try { await refresh(); } catch (e) { log('Load/refresh failed (connect first)'); }
-    });
+  // boot
+  (async () => {
+    try { abi = await loadAbi(); } catch (e) { log('ABI load failed: ' + e.message, 'err'); }
+    $('addr').value = (CONTRACT_ADDRESS || "").toLowerCase();
+    try { await connect(); } catch {}
+    if (CONTRACT_ADDRESS) { load(CONTRACT_ADDRESS); try { await refresh(); } catch {} }
+  })();
   </script>
 </body>
 </html>
