@@ -2,27 +2,126 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>HOLE Admin & Mint</title>
+  <title>KAZAR+SOMNIA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E">
+
+  <!-- ✨ Google Fonts (your picks) -->
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=Bungee&display=swap" rel="stylesheet">
+
+  <!-- Ethers v5 UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
   <style>
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin:24px; background:#0f1220; color:#e8eaf6; }
-    .card { background:#171b2e; padding:16px; border-radius:14px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.3); }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    label { font-size:14px; opacity:.9; }
-    input { background:#0f1220; border:1px solid #27305b; color:#e8eaf6; padding:8px 10px; border-radius:10px; }
-    button { background:#5865f2; color:white; border:none; padding:8px 12px; border-radius:10px; cursor:pointer; }
-    button.ghost { background:transparent; border:1px solid #5865f2; }
-    h2 { margin:.2rem 0 .6rem; }
-    .muted { opacity:.8; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-    .ok { color:#7CFC98; } .err { color:#ff8080; }
+    :root{
+      /* tweak these for palette */
+      --bg:#0a0b12;
+      --grid:#1a1f33;
+      --card:#0f1220;
+      --edge:#2ad4ff;       /* neon blue */
+      --edge2:#8a5bff;      /* neon purple */
+      --primary:#00ffa6;    /* action green */
+      --text:#e9ecff;
+      --muted:#9aa3c7;
+      --border:#2b3156;
+      --ok:#77ffb0; --err:#ff7e7e;
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:24px;
+      color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:
+        /* soft radial glows */
+        radial-gradient(800px 800px at 15% 25%, rgba(42,212,255,.07), transparent 60%),
+        radial-gradient(600px 600px at 85% 70%, rgba(138,91,255,.08), transparent 60%),
+        /* grid */
+        linear-gradient(var(--bg),var(--bg)),
+        repeating-linear-gradient(0deg, transparent 0 39px, var(--grid) 40px),
+        repeating-linear-gradient(90deg, transparent 0 39px, var(--grid) 40px);
+      background-blend-mode: screen, screen, normal, normal, normal;
+    }
+
+    /* Headings with your fonts */
+    h1{
+      font-family: 'Rubik Mono One', system-ui, sans-serif;
+      letter-spacing:1px; line-height:1.1; margin:0 0 18px;
+      text-shadow:0 0 22px rgba(42,212,255,.35), 0 0 6px rgba(138,91,255,.25);
+    }
+    h2{
+      font-family:'Bungee', system-ui, sans-serif;
+      letter-spacing:.3px; margin:.2rem 0 .8rem; color:var(--text);
+      text-shadow:0 0 10px rgba(42,212,255,.15);
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.0)) , var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:16px;
+      position:relative;
+      overflow:hidden;
+      box-shadow:
+        0 0 0 1px rgba(42,212,255,.06),
+        0 12px 30px rgba(0,0,0,.45);
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .card::before{
+      /* neon edge sweep */
+      content:"";
+      position:absolute; inset:-2px;
+      border-radius:calc(var(--radius) + 2px);
+      background:conic-gradient(from 180deg at 50% 50%, rgba(42,212,255,.35), rgba(138,91,255,.35), transparent 25%);
+      filter:blur(18px); opacity:.25; pointer-events:none;
+      mask:linear-gradient(#000 0 0);
+    }
+    .card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(42,212,255,.35);
+      box-shadow:0 0 0 1px rgba(42,212,255,.25), 0 22px 45px rgba(0,0,0,.6);
+    }
+
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+    label{font-size:13px; color:var(--muted)}
+    input{
+      background:#0a0d1d; border:1px solid var(--border); color:var(--text);
+      padding:10px 12px; border-radius:12px; outline:none; min-width:180px;
+    }
+    input:focus{border-color:var(--edge); box-shadow:0 0 0 3px rgba(42,212,255,.15)}
+    button{
+      font-family:'Bungee',system-ui,sans-serif;
+      letter-spacing:.2px;
+      background:linear-gradient(90deg, var(--primary), #74ffea);
+      color:#001b12; border:none; padding:10px 14px; border-radius:12px; cursor:pointer;
+      box-shadow:0 6px 20px rgba(0,255,166,.25), inset 0 -2px 0 rgba(0,0,0,.15);
+      transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    button:hover{transform:translateY(-1px); filter:saturate(1.1)}
+    button:active{transform:translateY(0)}
+    button.ghost{
+      background:transparent; color:var(--text); border:1px solid var(--edge);
+      box-shadow:none;
+    }
+
+    .grid{display:grid; grid-template-columns: repeat(12, 1fr); gap:16px}
+    .col-3{grid-column: span 3; min-width:260px}
+    .col-4{grid-column: span 4; min-width:280px}
+    .col-6{grid-column: span 6; min-width:320px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; white-space:pre-wrap; word-break:break-word}
+    .muted{color:var(--muted)}
+    .tag{border:1px solid var(--border); padding:6px 10px; border-radius:999px; background:#12162a}
+    .ok{color:var(--ok)} .err{color:var(--err)}
+    @media (max-width:1100px){ .grid{grid-template-columns: repeat(6,1fr)} }
+    @media (max-width:720px) { .grid{grid-template-columns: repeat(1,1fr)} }
   </style>
 </head>
 <body>
   <h1>HOLE — Control & Mint</h1>
 
+  <!-- Top bar -->
   <div class="card">
     <div class="row">
       <button id="connect">Connect MetaMask</button>
@@ -30,31 +129,36 @@
     </div>
     <div class="row" style="margin-top:10px;">
       <label>Contract</label>
-      <input id="addr" size="50" />
+      <input id="addr" size="52" />
       <button id="load" class="ghost">Load</button>
+      <span class="tag" id="net">ChainId: ?</span>
+      <button id="switchNet" class="ghost">Switch to this chain</button>
+      <button id="watchAsset" class="ghost">Add HOLE to MetaMask</button>
     </div>
-    <div id="net" class="muted" style="margin-top:8px;"></div>
   </div>
 
   <div class="grid">
-    <div class="card">
+    <div class="card col-4">
       <h2>Stats</h2>
       <div class="mono" id="stats">—</div>
       <div class="row" style="margin-top:10px;">
         <button id="refresh" class="ghost">Refresh</button>
+        <button id="copyAddr" class="ghost">Copy contract</button>
+        <button id="copyOwner" class="ghost">Copy owner</button>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card col-4">
       <h2>Transferability</h2>
       <div>transfersEnabled: <span class="mono" id="te">?</span></div>
       <div class="row" style="margin-top:10px;">
         <button id="lock">Lock (false)</button>
         <button id="unlock" class="ghost">Unlock (true)</button>
       </div>
+      <div class="muted" style="margin-top:6px">When locked, <b>transfer/transferFrom</b> revert.</div>
     </div>
 
-    <div class="card">
+    <div class="card col-4">
       <h2>Mint Controls</h2>
       <div>mintOpen: <span class="mono" id="mo">?</span></div>
       <div class="row" style="margin-top:8px;">
@@ -70,12 +174,12 @@
       <div style="margin-top:10px;">walletMintCap (whole): <span class="mono" id="cap">?</span></div>
       <div class="row" style="margin-top:8px;">
         <label>Set cap (whole)</label>
-        <input id="newCap" placeholder="0 => unlimited" />
+        <input id="newCap" placeholder="0 ⇒ unlimited" />
         <button id="setCap">Set Cap</button>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card col-3">
       <h2>Mint</h2>
       <div class="row">
         <label>Amount (whole HOLE)</label>
@@ -86,7 +190,7 @@
       <div class="muted mono" id="youMinted" style="margin-top:6px;">—</div>
     </div>
 
-    <div class="card">
+    <div class="card col-3">
       <h2>Balances</h2>
       <div class="row">
         <label>Address</label>
@@ -96,21 +200,58 @@
       <div class="mono" id="balOut">—</div>
     </div>
 
-    <div class="card">
-      <h2>Treasury</h2>
+    <div class="card col-6">
+      <h2>ERC-20 Actions</h2>
       <div class="row">
+        <label>Approve → Spender</label>
+        <input id="apSpender" size="40" placeholder="0xSpender..." />
+        <label>Amount (whole)</label>
+        <input id="apAmount" type="number" min="0" value="0" />
+        <button id="approve">Approve</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label>Allowance Of</label>
+        <input id="alOwner" size="40" placeholder="owner 0x..." />
+        <label>To</label>
+        <input id="alSpender" size="40" placeholder="spender 0x..." />
+        <button id="readAllowance">Read allowance</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label>Transfer → To</label>
+        <input id="tfTo" size="40" placeholder="0xRecipient..." />
+        <label>Amount (whole)</label>
+        <input id="tfAmount" type="number" min="0" value="0" />
+        <button id="transferBtn">Transfer</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label>TransferFrom</label>
+        <input id="tffFrom" size="40" placeholder="from 0x..." />
+        <input id="tffTo" size="40" placeholder="to 0x..." />
+        <input id="tffAmount" type="number" min="0" value="0" />
+        <button id="transferFromBtn">TransferFrom</button>
+      </div>
+    </div>
+
+    <div class="card col-6">
+      <h2>Owner Tools</h2>
+      <div class="row">
+        <label>New owner</label>
+        <input id="newOwner" size="44" placeholder="0x..." />
+        <button id="xferOwner">Transfer Ownership</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
         <label>Withdraw to</label>
-        <input id="to" size="42" placeholder="0xTreasury..." />
+        <input id="to" size="44" placeholder="0xTreasury..." />
         <button id="withdraw">Withdraw</button>
       </div>
-      <div class="muted">Owner only</div>
+      <div class="row" style="margin-top:8px;">
+        <button id="renounce" class="ghost">Danger: Renounce Ownership</button>
+      </div>
+      <div class="muted">Owner-only. Renounce is irreversible.</div>
     </div>
   </div>
 
   <div id="log" class="mono" style="margin-top:16px;"></div>
-
-  <!-- Ethers v5 UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
   <!-- App logic -->
   <script type="module">
@@ -119,7 +260,7 @@
   const $ = (id) => document.getElementById(id);
   const log = (m, cls='') => { const n=document.createElement('div'); n.textContent=m; if(cls) n.className=cls; $('log').prepend(n); };
 
-  let provider, signer, contract, decimals = 18, abi, currentAccount = "";
+  let provider, signer, contract, decimals = 18, abi, currentAccount = "", currentOwner = "", currentSymbol = "HOLE";
 
   const normalize = (addr) => {
     addr = (addr || "").trim();
@@ -135,20 +276,39 @@
 
   async function connect() {
     if (!window.ethereum) { alert('Install MetaMask'); return; }
-    provider = new ethers.providers.Web3Provider(window.ethereum);
+    provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
     await provider.send('eth_requestAccounts', []);
     signer = provider.getSigner();
     currentAccount = (await signer.getAddress()).toLowerCase();
     $('who').textContent = 'Connected: ' + currentAccount;
     const n = await provider.getNetwork();
     $('net').textContent = `ChainId: ${n.chainId}`;
+    if (window.ethereum && !window._holeListeners) {
+      window.ethereum.on('chainChanged', () => location.reload());
+      window.ethereum.on('accountsChanged', () => location.reload());
+      window._holeListeners = true;
+    }
+  }
+
+  async function ensureDeployed(address) {
+    const code = await (signer?.provider || provider).getCode(address);
+    if (!code || code === '0x' || code === '0x0') {
+      const n = await provider.getNetwork();
+      throw new Error(`No contract code at ${address} on chainId ${n.chainId}. Check network or address.`);
+    }
   }
 
   function load(address) {
-    if (!abi) { log('ABI not loaded yet'); return; }
-    const norm = normalize(address);
-    contract = new ethers.Contract(norm, abi, signer || provider);
-    $('addr').value = norm;
+    (async () => {
+      try {
+        if (!abi) throw new Error('ABI not loaded yet');
+        const norm = normalize(address);
+        await ensureDeployed(norm);
+        contract = new ethers.Contract(norm, abi, signer || provider);
+        $('addr').value = norm;
+        log(`Loaded contract ${norm}`);
+      } catch (e) { log('load error: ' + (e?.message || e), 'err'); }
+    })();
   }
 
   async function refresh() {
@@ -159,105 +319,148 @@
         contract.totalSupply(), contract.owner(),
         contract.pricePerTokenWei(), contract.tokensLeft(),
         contract.mintOpen(), contract.transfersEnabled(),
-        contract.walletMintCap()
+        contract.walletMintCap ? contract.walletMintCap() : Promise.resolve(0)
       ]);
-      decimals = dec;
+      currentOwner = own.toLowerCase();
+      currentSymbol = sym; decimals = dec;
+
       $('ppw').textContent = ppw.toString();
       $('mo').textContent = mo;
       $('te').textContent = te;
-      $('cap').textContent = cap.toString();
+      $('cap').textContent = (cap||0).toString();
+
       $('stats').innerHTML =
-        `name: ${nm}\n`+
-        `symbol: ${sym}\n`+
-        `decimals: ${dec}\n`+
-        `totalSupply: ${ethers.utils.formatUnits(ts, dec)} ${sym}\n`+
-        `tokensLeft: ${left.toString()} (whole)\n`+
-        `owner: ${own}`;
+        `name: ${nm}   symbol: ${sym}\n`+
+        `decimals: ${dec}   totalSupply: ${ethers.utils.formatUnits(ts, dec)} ${sym}\n`+
+        `${sym} tokensLeft: ${left.toString()} (whole)\n`+
+        `owner:\n${own}`;
 
-      const minted = currentAccount ? await contract.mintedWhole(currentAccount) : ethers.BigNumber.from(0);
+      const minted = (contract.mintedWhole && currentAccount)
+        ? await contract.mintedWhole(currentAccount)
+        : ethers.BigNumber.from(0);
       $('mintNote').textContent = `Mint cost = amount * pricePerTokenWei (auto-sent).`;
-      $('youMinted').textContent = `You minted so far: ${minted.toString()} / cap ${cap.toString()} (whole; 0 cap = unlimited)`;
-    } catch (e) {
-      log('refresh error: ' + (e?.reason || e?.message), 'err');
-    }
+      $('youMinted').textContent = `You minted so far: ${minted.toString()} / cap ${(cap||0).toString()} (whole; 0 cap = unlimited)`;
+    } catch (e) { log('refresh error: ' + (e?.reason || e?.message || e), 'err'); }
   }
 
-  async function setTransfers(enabled) {
-    try {
-      const tx = await contract.setTransfersEnabled(enabled);
-      log(`setTransfersEnabled(${enabled}) tx: ${tx.hash}`);
-      await tx.wait(); log('✓ transfers enabled = ' + enabled, 'ok'); await refresh();
-    } catch (e) { log('setTransfersEnabled error: ' + (e?.reason || e?.message), 'err'); }
-  }
+  // ---- Admin
+  async function setTransfers(enabled){try{
+    const tx=await contract.setTransfersEnabled(enabled);
+    log(`setTransfersEnabled(${enabled}) tx: ${tx.hash}`); await tx.wait(); log('✓ transfersEnabled='+enabled,'ok'); await refresh();
+  }catch(e){log('setTransfersEnabled error: '+(e?.reason||e?.message||e),'err');}}
 
-  async function setMint(open) {
-    try {
-      const tx = await contract.setMintOpen(open);
-      log(`setMintOpen(${open}) tx: ${tx.hash}`);
-      await tx.wait(); log('✓ mintOpen = ' + open, 'ok'); await refresh();
-    } catch (e) { log('setMintOpen error: ' + (e?.reason || e?.message), 'err'); }
-  }
+  async function setMint(open){try{
+    const tx=await contract.setMintOpen(open);
+    log(`setMintOpen(${open}) tx: ${tx.hash}`); await tx.wait(); log('✓ mintOpen='+open,'ok'); await refresh();
+  }catch(e){log('setMintOpen error: '+(e?.reason||e?.message||e),'err');}}
 
-  async function setPrice() {
-    try {
-      const v = $('newPrice').value.trim();
-      if (!v) return alert('enter new price in wei');
-      const wei = ethers.BigNumber.from(v);
-      const tx = await contract.setPrice(wei);
-      log(`setPrice(${wei.toString()}) tx: ${tx.hash}`);
-      await tx.wait(); log('✓ price updated', 'ok'); await refresh();
-    } catch (e) { log('setPrice error: ' + (e?.reason || e?.message), 'err'); }
-  }
+  async function setPrice(){try{
+    const v=$('newPrice').value.trim(); if(!v) return alert('enter new price in wei');
+    const wei=ethers.BigNumber.from(v);
+    const tx=await contract.setPrice(wei);
+    log(`setPrice(${wei.toString()}) tx: ${tx.hash}`); await tx.wait(); log('✓ price updated','ok'); await refresh();
+  }catch(e){log('setPrice error: '+(e?.reason||e?.message||e),'err');}}
 
-  async function setCap() {
-    try {
-      const v = $('newCap').value.trim();
-      if (v === "") return alert('enter new cap in WHOLE tokens (0 => unlimited)');
-      const capWhole = ethers.BigNumber.from(v);
-      const tx = await contract.setWalletMintCap(capWhole);
-      log(`setWalletMintCap(${capWhole.toString()}) tx: ${tx.hash}`);
-      await tx.wait(); log('✓ cap updated', 'ok'); await refresh();
-    } catch (e) { log('setCap error: ' + (e?.reason || e?.message), 'err'); }
-  }
+  async function setCap(){try{
+    const v=$('newCap').value.trim(); if(v==="") return alert('enter new cap (whole)');
+    const capWhole=ethers.BigNumber.from(v);
+    const tx=await contract.setWalletMintCap(capWhole);
+    log(`setWalletMintCap(${capWhole.toString()}) tx: ${tx.hash}`); await tx.wait(); log('✓ cap updated','ok'); await refresh();
+  }catch(e){log('setCap error: '+(e?.reason||e?.message||e),'err');}}
 
-  async function doMint() {
-    try {
-      const amount = ethers.BigNumber.from(String($('amt').value || '0'));
-      if (amount.lte(0)) return alert('amount > 0');
-      // local check against cap (UI-side)
-      const cap = await contract.walletMintCap();
-      if (cap.gt(0)) {
-        const minted = await contract.mintedWhole(currentAccount);
-        if (minted.add(amount).gt(cap)) {
-          return alert(`wallet cap exceeded: minted ${minted.toString()} + amount ${amount.toString()} > cap ${cap.toString()}`);
-        }
+  // ---- Mint
+  async function doMint(){try{
+    const amount=ethers.BigNumber.from(String($('amt').value||'0'));
+    if(amount.lte(0)) return alert('amount > 0');
+    if(contract.walletMintCap && contract.mintedWhole){
+      const cap=await contract.walletMintCap();
+      if(cap.gt(0)){
+        const minted=await contract.mintedWhole(currentAccount);
+        if(minted.add(amount).gt(cap)) return alert(`wallet cap exceeded: minted ${minted.toString()} + amount ${amount.toString()} > cap ${cap.toString()}`);
       }
-      const price = await contract.pricePerTokenWei();
-      const value = price.mul(amount);
-      const tx = await contract.mint(amount, { value });
-      log(`mint(${amount.toString()}) value=${value.toString()} tx: ${tx.hash}`);
-      await tx.wait(); log('✓ minted', 'ok'); await refresh();
-    } catch (e) { log('mint error: ' + (e?.reason || e?.message), 'err'); }
+    }
+    const price=await contract.pricePerTokenWei();
+    const value=price.mul(amount);
+    const tx=await contract.mint(amount,{ value });
+    log(`mint(${amount.toString()}) value=${value.toString()} tx: ${tx.hash}`); await tx.wait(); log('✓ minted','ok'); await refresh();
+  }catch(e){log('mint error: '+(e?.reason||e?.message||e),'err');}}
+
+  // ---- ERC-20
+  async function approveSpender(){try{
+    const spender=normalize($('apSpender').value); const amtWhole=String($('apAmount').value||'0');
+    const amt=ethers.utils.parseUnits(amtWhole, decimals);
+    const tx=await contract.approve(spender, amt);
+    log(`approve(${spender}, ${amtWhole}) tx: ${tx.hash}`); await tx.wait(); log('✓ approved','ok');
+  }catch(e){log('approve error: '+(e?.reason||e?.message||e),'err');}}
+
+  async function readAllowance(){try{
+    const owner=normalize($('alOwner').value); const spender=normalize($('alSpender').value);
+    const a=await contract.allowance(owner, spender);
+    log(`allowance(${owner}, ${spender}) = ${ethers.utils.formatUnits(a, decimals)} ${currentSymbol}`);
+  }catch(e){log('allowance error: '+(e?.reason||e?.message||e),'err');}}
+
+  async function doTransfer(){try{
+    const to=normalize($('tfTo').value); const amtWhole=String($('tfAmount').value||'0');
+    const amt=ethers.utils.parseUnits(amtWhole, decimals);
+    const tx=await contract.transfer(to, amt);
+    log(`transfer(${to}, ${amtWhole}) tx: ${tx.hash}`); await tx.wait(); log('✓ transfer done','ok'); await refresh();
+  }catch(e){log('transfer error: '+(e?.reason||e?.message||e),'err');}}
+
+  async function doTransferFrom(){try{
+    const from=normalize($('tffFrom').value); const to=normalize($('tffTo').value); const amtWhole=String($('tffAmount').value||'0');
+    const amt=ethers.utils.parseUnits(amtWhole, decimals);
+    const tx=await contract.transferFrom(from, to, amt);
+    log(`transferFrom(${from} → ${to}, ${amtWhole}) tx: ${tx.hash}`); await tx.wait(); log('✓ transferFrom done','ok'); await refresh();
+  }catch(e){log('transferFrom error: '+(e?.reason||e?.message||e),'err');}}
+
+  // ---- Owner tools
+  async function transferOwner(){try{
+    const newOwner=normalize($('newOwner').value);
+    const tx=await contract.transferOwnership(newOwner);
+    log('transferOwnership tx: '+tx.hash); await tx.wait(); log('✓ ownership transferred','ok'); await refresh();
+  }catch(e){log('transferOwnership error: '+(e?.reason||e?.message||e),'err');}}
+
+  async function withdraw(){try{
+    const to=normalize($('to').value);
+    const tx=await contract.withdraw(to);
+    log('withdraw tx: '+tx.hash); await tx.wait(); log('✓ withdraw done','ok');
+  }catch(e){log('withdraw error: '+(e?.reason||e?.message||e),'err');}}
+
+  async function renounce(){
+    if(!confirm('Are you sure? Renouncing ownership is irreversible.')) return;
+    try{
+      const tx=await contract.renounceOwnership();
+      log('renounceOwnership tx: '+tx.hash); await tx.wait(); log('✓ ownership renounced','ok'); await refresh();
+    }catch(e){log('renounceOwnership error: '+(e?.reason||e?.message||e),'err');}
   }
 
-  async function readBal() {
-    try {
-      const a = normalize($('balAddr').value);
-      const bal = await contract.balanceOf(a);
-      $('balOut').textContent = ethers.utils.formatUnits(bal, decimals) + ' HOLE';
-    } catch (e) { log('balanceOf error: ' + (e?.reason || e?.message), 'err'); }
+  // ---- Helpers
+  async function readBal(){try{
+    const a=normalize($('balAddr').value);
+    const bal=await contract.balanceOf(a);
+    $('balOut').textContent=ethers.utils.formatUnits(bal, decimals)+' '+currentSymbol;
+  }catch(e){log('balanceOf error: '+(e?.reason||e?.message||e),'err');}}
+
+  async function switchNet(){
+    try{
+      const n=await provider.getNetwork();
+      await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{ chainId:'0x'+n.chainId.toString(16)}] });
+    }catch(e){ log('switch error (add network in MetaMask if needed): '+(e?.message||e),'err'); }
   }
 
-  async function withdraw() {
-    try {
-      const to = normalize($('to').value);
-      const tx = await contract.withdraw(to);
-      log('withdraw tx: ' + tx.hash);
-      await tx.wait(); log('✓ withdraw done', 'ok');
-    } catch (e) { log('withdraw error: ' + (e?.reason || e?.message), 'err'); }
+  async function watchAsset(){
+    try{
+      const addr=$('addr').value.trim();
+      await window.ethereum.request({
+        method:'wallet_watchAsset',
+        params:{ type:'ERC20', options:{ address:addr, symbol:currentSymbol, decimals } }
+      });
+    }catch(e){ log('watchAsset error: '+(e?.message||e),'err'); }
   }
 
-  // hook up UI
+  function copy(text){ navigator.clipboard.writeText(text).then(()=>log('copied','ok')); }
+
+  // wire up
   $('connect').onclick = connect;
   $('load').onclick = async () => { load($('addr').value.trim()); await refresh(); };
   $('refresh').onclick = refresh;
@@ -269,7 +472,17 @@
   $('setCap').onclick = setCap;
   $('mint').onclick = doMint;
   $('readBal').onclick = readBal;
+  $('approve').onclick = approveSpender;
+  $('readAllowance').onclick = readAllowance;
+  $('transferBtn').onclick = doTransfer;
+  $('transferFromBtn').onclick = doTransferFrom;
+  $('xferOwner').onclick = transferOwner;
   $('withdraw').onclick = withdraw;
+  $('renounce').onclick = renounce;
+  $('switchNet').onclick = switchNet;
+  $('watchAsset').onclick = watchAsset;
+  $('copyAddr').onclick = () => copy($('addr').value.trim());
+  $('copyOwner').onclick = () => copy(currentOwner);
 
   // boot
   (async () => {
