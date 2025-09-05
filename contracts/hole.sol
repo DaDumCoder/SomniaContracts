@@ -15,9 +15,9 @@ pragma solidity ^0.8.20;
  * OpenZeppelin v4.9.x
  */
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.5/contracts/token/ERC20/ERC20.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.5/contracts/access/Ownable.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.5/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract HOLE is ERC20, Ownable, ReentrancyGuard {
     /// @notice Price per ONE whole token (18 decimals) in wei. 0 => free mint.

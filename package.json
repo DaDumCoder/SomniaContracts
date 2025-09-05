@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "hardhat": "^3.0.4",
     "http-server": "^14.1.1"
   },
   "dependencies": {
